@@ -21,6 +21,7 @@ import (
 	"io"
 	"regexp"
 	"strings"
+	"github.com/gosimple/slug"
 )
 
 // HTMLFlags control optional behavior of HTML renderer.
@@ -901,11 +902,12 @@ func (r *HTMLRenderer) writeTOC(w io.Writer, ast *Node) {
 	tocLevel := 0
 	headingCount := 0
 
+	slug.Lowercase = false
 	ast.Walk(func(node *Node, entering bool) WalkStatus {
 		if node.Type == Heading && !node.HeadingData.IsTitleblock {
 			inHeading = entering
 			if entering {
-				node.HeadingID = fmt.Sprintf("toc_%d", headingCount)
+				node.HeadingID = slug.Make(string(node.FirstChild.Literal))
 				if node.Level == tocLevel {
 					buf.WriteString("</li>\n\n<li>")
 				} else if node.Level < tocLevel {
@@ -921,7 +923,7 @@ func (r *HTMLRenderer) writeTOC(w io.Writer, ast *Node) {
 					}
 				}
 
-				fmt.Fprintf(&buf, `<a href="#toc_%d">`, headingCount)
+				fmt.Fprintf(&buf, `<a href="#%s">`, node.HeadingID)
 				headingCount++
 			} else {
 				buf.WriteString("</a>")
